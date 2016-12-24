@@ -1,0 +1,9 @@
+*.o
+*.d
+*.so
+*.a
+*.bin
+kkServer.config
+kkServer.files
+kkServer.includes
+kkServer.creator
