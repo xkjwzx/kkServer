@@ -3,6 +3,8 @@
 *.so
 *.a
 *.bin
+*.swp
+*.user
 kkServer.config
 kkServer.files
 kkServer.includes

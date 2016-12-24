@@ -16,7 +16,7 @@
 #define ITCAST_DEBUG_FILE_	"itderlog.log"
 #define ITCAST_MAX_STRING_LEN 		10240
 
-//LevelÀà±ğ
+//Levelç±»åˆ«
 #define IC_NO_LOG_LEVEL			0
 #define IC_DEBUG_LEVEL			1
 #define IC_INFO_LEVEL			2
@@ -25,7 +25,7 @@
 
 int  LogLevel[5] = {IC_NO_LOG_LEVEL, IC_DEBUG_LEVEL, IC_INFO_LEVEL, IC_WARNING_LEVEL, IC_ERROR_LEVEL};
 
-//LevelµÄÃû³Æ
+//Levelçš„åç§°
 char ICLevelName[5][10] = {"NOLOG", "DEBUG", "INFO", "WARNING", "ERROR"};
 
 static int ITCAST_Error_GetCurTime(char* strTime)
@@ -70,20 +70,20 @@ static void ITCAST_Error_Core(const char *file, int line, int level, int status,
     int	 tmpStrLen = 0;
     int  pf = 0;
     
-    //³õÊ¼»¯
+    //åˆå§‹åŒ–
     memset(str, 0, ITCAST_MAX_STRING_LEN);
     memset(tmpStr, 0, 64);
     
-    //¼ÓÈëLOGÊ±¼ä
+    //åŠ å…¥LOGæ—¶é—´
     tmpStrLen = ITCAST_Error_GetCurTime(tmpStr);
     tmpStrLen = sprintf(str, "[%s] ", tmpStr);
     strLen = tmpStrLen;
 
-    //¼ÓÈëLOGµÈ¼¶
+    //åŠ å…¥LOGç­‰çº§
     tmpStrLen = sprintf(str+strLen, "[%s] ", ICLevelName[level]);
     strLen += tmpStrLen;
     
-    //¼ÓÈëLOG×´Ì¬
+    //åŠ å…¥LOGçŠ¶æ€
     if (status != 0) 
     {
         tmpStrLen = sprintf(str+strLen, "[ERRNO is %d] ", status);
@@ -94,47 +94,47 @@ static void ITCAST_Error_Core(const char *file, int line, int level, int status,
     }
     strLen += tmpStrLen;
 
-    //¼ÓÈëLOGĞÅÏ¢
+    //åŠ å…¥LOGä¿¡æ¯
     tmpStrLen = vsprintf(str+strLen, fmt, args);
     strLen += tmpStrLen;
 
-    //¼ÓÈëLOG·¢ÉúÎÄ¼ş
+    //åŠ å…¥LOGå‘ç”Ÿæ–‡ä»¶
     tmpStrLen = sprintf(str+strLen, " [%s]", file);
     strLen += tmpStrLen;
 
-    //¼ÓÈëLOG·¢ÉúĞĞÊı
+    //åŠ å…¥LOGå‘ç”Ÿè¡Œæ•°
     tmpStrLen = sprintf(str+strLen, " [%d]\n", line);
     strLen += tmpStrLen;
     
-    //´ò¿ªLOGÎÄ¼ş
+    //æ‰“å¼€LOGæ–‡ä»¶
     if(ITCAST_Error_OpenFile(&pf))
 	{
 		return ;
 	}
 	
-    //Ğ´ÈëLOGÎÄ¼ş
+    //å†™å…¥LOGæ–‡ä»¶
     write(pf, str, strLen);
     //IC_Log_Error_WriteFile(str);
     
-    //¹Ø±ÕÎÄ¼ş
+    //å…³é—­æ–‡ä»¶
     close(pf);
     
     return ;
 }
 
 
-void ITDER_LOG(const char *file, int line, int level, int status, const char *fmt, ...)
+void LOG(const char *file, int line, int level, int status, const char *fmt, ...)
 {
     va_list args;
 	
-	//ÅĞ¶ÏÊÇ·ñĞèÒªĞ´LOG
+	//åˆ¤æ–­æ˜¯å¦éœ€è¦å†™LOG
 //	if(level!=IC_DEBUG_LEVEL && level!=IC_INFO_LEVEL && level!=IC_WARNING_LEVEL && level!=IC_ERROR_LEVEL)
 	if(level == IC_NO_LOG_LEVEL)
 	{
 		return ;
 	}
 	
-	//µ÷ÓÃºËĞÄµÄĞ´LOGº¯Êı
+	//è°ƒç”¨æ ¸å¿ƒçš„å†™LOGå‡½æ•°
     va_start(args, fmt);
     ITCAST_Error_Core(file, line, level, status, fmt, args);
     va_end(args);

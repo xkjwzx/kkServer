@@ -1,11 +1,13 @@
 SOURCES += \
     main.cpp \
-    server.cpp
+    server.cpp \
+    log.cpp
 
 HEADERS += \
     server.h \
     def.h \
-    unit.h
+    unit.h \
+    log.h
 
 LIBS += \
     -ltufao1 \

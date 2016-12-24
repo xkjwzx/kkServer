@@ -15,12 +15,15 @@
 
 #include <hiredis/hiredis.h>
 
+
+
 using namespace Tufao;
 
 class Server : public QObject
 {
     Q_OBJECT
 public:
+
     explicit Server(QObject *parent = 0);
 
     HttpServer* server;
@@ -45,7 +48,9 @@ public:
 
 private:
    QSqlDatabase m_db;
-   redisContext* redisc;   
+   redisContext* m_redisc;
+   redisReply *m_reply;
+
 signals:
 
 public slots:

@@ -198,6 +198,11 @@ QJsonObject Server::UpdatePos(QJsonObject &req){
     if(!type.compare("driver") ){//driver
         //save driver status in redis
          resp.insert(KK_RESULT,QString(KK_OK));
+         
+         //有订单
+         if(hasOrder()){
+             
+         } 
 
     }else if(!type.compare("passenger")){
 
