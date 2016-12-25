@@ -1,8 +1,6 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include<QtSql/QSqlDatabase>
-
 #include <QObject>
 #include<tufao-1/Tufao/HttpServer>
 #include<tufao-1/Tufao/HttpServerRequest>
@@ -13,7 +11,7 @@
 #include<QJsonDocument>
 #include<QJsonArray>
 
-#include <hiredis/hiredis.h>
+
 
 
 
@@ -41,15 +39,6 @@ public:
     QJsonObject UpdatePos(QJsonObject &req);
 
 
-    int initRedis();
-
-    int saveDriverStatus(bool isFree,double lat,double lng,uint64_t geoh,QString tel,QString carNo,QString sessionTime);
-   int savePassengerStatus(double lat,double lng,uint64_t geoh,QString tel,QString sessionTime);
-
-private:
-   QSqlDatabase m_db;
-   redisContext* m_redisc;
-   redisReply *m_reply;
 
 signals:
 

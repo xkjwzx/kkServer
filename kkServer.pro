@@ -1,13 +1,17 @@
 SOURCES += \
     main.cpp \
     server.cpp \
-    log.cpp
+    log.cpp \
+    order.cpp \
+    dbop.cpp
 
 HEADERS += \
     server.h \
     def.h \
     unit.h \
-    log.h
+    log.h \
+    order.h \
+    dbop.h
 
 LIBS += \
     -ltufao1 \

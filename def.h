@@ -44,8 +44,8 @@ MKK_UPDATESTATUS
 #define KK_LNG2 "lng2"
 #define KK_TEL "tel"
 #define KK_ORDERID "orderid"
-
-
+#define KK_PASSWORDERR "用户名或密码!"
+#define KK_NOTEMPTY "用户名或密码不能为空！"
 
 
 #endif // DEF_H

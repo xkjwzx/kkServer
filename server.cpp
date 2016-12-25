@@ -2,41 +2,29 @@
 #include "server.h"
 
 #include<QCryptographicHash>
-
-#include<QtSql/QSqlQuery>
-#include<QtSql/QSqlError>
+#include<QDateTime>
 
 #include"unit.h"
 #include"log.h"
+#include"order.h"
+#include"dbop.h"
 
-int Server::initRedis(){
-    //redis默认监听端口为6387，可以在配置文件中修改
-    m_redisc = redisConnect("127.0.0.1", 6379);
-    if ( m_redisc->err)
-    {
-            redisFree(m_redisc);
-            printf("Connect to redisServer faile\n");
-            return 1;
-    }
-    printf("Connect to redisServer Success\n");
-    return 0;
 
-}
+
 
 Server::Server(QObject *parent) : QObject(parent)
 {
-    m_db=QSqlDatabase::addDatabase("QMYSQL");
-    m_db.setHostName("localhost");
-    m_db.setUserName("root");
-    m_db.setPassword("123456");
-    m_db.setDatabaseName("car1");//
-    if(!m_db.open()){
-        qDebug()<<"open db error.";
-        exit(0);
+
+    //initial db
+    if(0!=dbop::instance()->initdb()){
+           qDebug()<<"initdb error.";
+            exit(0);
     }
 
     //initial redis
-    if(0!=initRedis()){
+    if(0!=dbop::instance()->initRedis()){
+        //close db
+          dbop::instance()->closedb();
           qDebug()<<"initRedis error.";
             exit(0);
     }
@@ -186,10 +174,10 @@ QJsonObject Server::UpdatePos(QJsonObject &req){
     QString username=req.value(KK_UPDATEPOS).toString();
     double lat=req.value(KK_LAT).toDouble();
     double lng=req.value(KK_LNG).toDouble();
-    QString geohash=req.value(KK_GEOHASH).toString();
+    QString geohash=req.value(KK_GEOHASH).toString(); //??
     QString type=req.value(KK_TYPE).toString();
 
-    LOG(__FILE__, __LINE__,LogLevel[4], 4,"func UpdatePos():%s",username.toStdString());
+    LOG(__FILE__, __LINE__,LogLevel[4], 4,"func UpdatePos():%s",username.toStdString().c_str());
     QJsonObject resp;
       resp.insert(KK_CMD,QString(KK_UPDATEPOS));
     resp.insert(KK_RESULT,QString(KK_ERR));
@@ -199,6 +187,20 @@ QJsonObject Server::UpdatePos(QJsonObject &req){
         //save driver status in redis
          resp.insert(KK_RESULT,QString(KK_OK));
 
+         //有订单.订单通过这里来发送
+  /*       if(Order::instance()->checkOrder()){
+            //负责将客户订单信息发送给司机
+                QJsonObject obj = Order::instance()->getPendingOrderInfo(driverName);
+                send(...)
+
+
+            Order::instance()->addOrder(jsonObj);
+         }
+
+         if(hasOrder()){
+
+         }
+*/
     }else if(!type.compare("passenger")){
 
     }
@@ -296,6 +298,7 @@ QJsonObject Server::UpdatePos(QJsonObject &req){
     cmd:”reg”
     username:”username”
     password:”password”
+    tel:"3123123"
 }
 
 相应报文
@@ -315,21 +318,18 @@ QJsonObject Server::Reg(QJsonObject &req)
 {
     QString username=req.value(KK_USERNAME).toString();
     QString password=req.value(KK_PASSWORD).toString();
-    LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Reg():%s",username.toStdString());
+    QString tel=req.value(KK_TEL).toString();
+    LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Reg():%s",username.toStdString().c_str());
 
     //change to md5 128bit=16bytes
     QByteArray bb;
     bb=QCryptographicHash::hash(password.toUtf8(),QCryptographicHash::Md5);
     QString md5=bb.toHex();
 
-    //execute the db
-    //insert into db
-    QString sql=QString("insert into user (username,password) values('%1','%2')").arg(username,md5);
-    QSqlQuery query=m_db.exec(sql);
-    QSqlError error=m_db.lastError();
+    //execute the db userinfo
 
-    //response
-    if(error.type()==QSqlError::NoError){
+    QString err;
+    if(0==dbop::instance()->insertUserInfo(err,username,md5,tel)){
         QJsonObject resp;
         resp.insert(KK_RESULT,QString(KK_OK));
         return resp;
@@ -337,7 +337,7 @@ QJsonObject Server::Reg(QJsonObject &req)
 
     QJsonObject resp;
     resp.insert(KK_RESULT,QString(KK_ERR));
-    resp.insert(KK_REASON,error.text());
+    resp.insert(KK_REASON,err);
     return resp;
 }
 
@@ -354,87 +354,58 @@ QJsonObject Server::Reg(QJsonObject &req)
 }
 
 相应报文
+成功
 {
     cmd:”login”
     result:”ok”
 }
-
+失败
 {
     cmd:”login”,
     result:”err”,
     reason:”xxxxxx”
 }
 */
-typedef struct driver{
-    bool isFree;
-    double lat;
-    double lng;
-    uint64_t Geohash;
-    QString tel;
-    QString carNo;
-    QString sessionTime;
-
-}driver;
-
-/*
-    hmset username:aaa status 1 lat 13.12232 lng 11.123213
-
-    sadd 1100110111000111111 driver1
-    sadd 1100110111000111111 driver2
-
-    sget 1100110111000111111
-       driver1
-       driver2
-
-   sismember 1100110111000111111 driver2
-
-*/
-int Server::saveDriverStatus(bool isFree,double lat,double lng,uint64_t geoh,QString tel,QString carNo,QString sessionTime){
-	
-  //  redisContent* redis = ...;
-       // hmset status: 1 username:aaa status 1 lat 13.12232 lng 11.123213
-        //hmset driver1 isFree 1 lat 12.234 lng 32.234 tel 12312312321 carNo 556565 sessionTime 20161234
-    /* Set a key */
-       QString username="driver2";
-       m_reply = (redisReply*)redisCommand(m_redisc,"hmset %s isFree %d lat %d lng %d geoh %ld tel %s carNo %s \
-sessionTime %s",username.toStdString(),1, lat,lng,geoh,tel,carNo,sessionTime);
-       printf("hmset: %s\n", m_reply->str);
-       freeReplyObject(m_reply);
-
-       //sadd 54312 "drive2"
-       m_reply = (redisReply*)redisCommand(m_redisc,"sadd %ld %s",geoh,username);
-       printf("sadd: %s\n", m_reply->str);
-       freeReplyObject(m_reply);
-
-
-}
-
- int Server::savePassengerStatus(double lat,double lng,uint64_t geoh,QString tel,QString sessionTime){
-     QString username="passenger2";
-     m_reply = (redisReply*)redisCommand(m_redisc,"hmset %s lat %d lng %d geoh %ld tel %s \
-sessionTime %s",username.toStdString(), lat,lng,geoh,tel,sessionTime);
-     printf("passenger hmset: %s\n", m_reply->str);
-     freeReplyObject(m_reply);
-
-     m_reply = (redisReply*)redisCommand(m_redisc,"sadd %ld %s",geoh,username);
-     printf("passenger sadd: %s\n", m_reply->str);
-     freeReplyObject(m_reply);
-
- }
 
 QJsonObject Server::Login(QJsonObject &req)
 {
     QString username=req.value(KK_USERNAME).toString();
     QString password=req.value(KK_PASSWORD).toString();
+    if(!username.compare("") || !password.compare("")){
+        QJsonObject resp;
+        resp.insert(KK_RESULT,QString(KK_NOTEMPTY));
+        return resp;
+    }
     double lat=req.value(KK_LAT).toDouble();
     double lng=req.value(KK_LNG).toDouble();
     QString type=req.value(KK_TYPE).toString();
 
-        LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Login():%s",username.toStdString());
-    if(!type.compare("driver") ){//driver
+        LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Login():%s",username.toStdString().c_str());
+
+        //read from db
+        //手机号码		约车用
+        QString tel="13512312312";//
+        QString name="abc";
+        QString dbPassword="";
+        QString err="";
+        if(dbop::instance()->readUserInfo(err,tel,name,dbPassword)){
+            QJsonObject resp;
+            resp.insert(KK_RESULT,QString("readUserInfo error!"));
+            return resp;
+        }
+        if( password.compare(dbPassword)){//用户名或密码错误
+            QJsonObject resp;
+            resp.insert(KK_RESULT,QString(KK_PASSWORDERR));
+            return resp;
+        }
+
+        QDateTime dateTime1=QDateTime::currentDateTime() ;
+        QString sessionTime=dateTime1.toString(Qt::TextDate);///////
+                uint64_t geo=geohash(lat,lng,20);
+
+
+        if(!type.compare("driver") ){//driver
         //save driver status in redis
-
-
 /*
 服务器的处理：
 需要在内存中（redis）保存司机的状态，
@@ -448,15 +419,19 @@ GeoHash值（可以简化服务器的压力）
 车牌			约车用
 session更新时间
 */
-        uint64_t tmp=geohash(lat,lng,20);
-        //read from db
-        //手机号码		约车用
-        QString tel="13512312312";
+
         //车牌			约车用
         QString carNo="232323";
-        QString sessionTime="2016-12-22";
-
-        saveDriverStatus(true,lat,lng,tmp,tel,carNo,sessionTime);//using redis
+        DriverInfo driver;
+        driver.name=name;
+        driver.isFree=true;
+        driver.lat=lat;
+        driver.lng=lng;
+        driver.geoh=geo;
+        driver.tel=tel;
+        driver.carNo=carNo;
+        driver.sessionTime=sessionTime;
+        dbop::instance()->saveDriverStatus(driver);//using redis
 
     }else if(!type.compare("passenger") ){//passenger
 
@@ -471,19 +446,15 @@ GeoHash值（可以简化服务器的压力）
 手机号码	约车用
 session更新时间
 */
-        uint64_t tmp=geohash(lat,lng,20);
-        //read from db
-        //手机号码		约车用
-        QString tel="13512312312";
-               QString sessionTime="2016-12-22";
-
-        savePassengerStatus(lat,lng,tmp,tel,sessionTime);//using redis
+        PassengerInfo passenger;
+        passenger.name=name;
+        passenger.lat=lat;
+        passenger.lng=lng;
+        passenger.geoh=geo;
+        passenger.tel=tel;
+        passenger.sessionTime=sessionTime;
+        dbop::instance()->savePassengerStatus(passenger);//using redis
     }
-
-
-
-
-
 
     QJsonObject resp;
     resp.insert(KK_RESULT,QString(KK_OK));
