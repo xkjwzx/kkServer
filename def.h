@@ -1,6 +1,8 @@
 #ifndef DEF_H
 #define DEF_H
 
+#define KK_LISTENPORT 8808
+
 #define KK_REG "reg"
 #define KK_LOGIN "login"
 #define KK_UPDATEPOS "updatepos"
@@ -44,8 +46,8 @@ MKK_UPDATESTATUS
 #define KK_LNG2 "lng2"
 #define KK_TEL "tel"
 #define KK_ORDERID "orderid"
-#define KK_PASSWORDERR "用户名或密码!"
-#define KK_NOTEMPTY "用户名或密码不能为空！"
+#define KK_PASSWORDERR "电话或密码!"
+#define KK_NOTEMPTY "电话或密码不能为空！"
 
 
 #endif // DEF_H

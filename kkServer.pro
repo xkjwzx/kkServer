@@ -3,7 +3,8 @@ SOURCES += \
     server.cpp \
     log.cpp \
     order.cpp \
-    dbop.cpp
+    dbop.cpp \
+    unit.cpp
 
 HEADERS += \
     server.h \

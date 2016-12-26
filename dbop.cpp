@@ -1,13 +1,24 @@
-#include "dbop.h"
+
 #include<QDebug>
+#include"dbop.h"
+dbop* dbop::dp=NULL;
+
 dbop::dbop()
 {
 
 }
 
+dbop::~dbop()
+{
+ if(dp)
+     delete dp;
+
+ if(m_redisc)
+    redisFree(m_redisc);
+}
+
 dbop *dbop::instance()
 {
-    static dbop* dp=NULL;
     if(dp)return dp;
     dp=new dbop;
     return dp;
@@ -111,11 +122,18 @@ sessionTime %s",passenger.name.toStdString().c_str(), passenger.lat ,passenger.l
 
 int dbop::readUserInfo(QString& err,QString& tel,QString& name,QString& dbPassWord)
 {
-    QString sql=QString("select '%1' '%2' from tuser where name='%3'").arg(tel,dbPassWord,name);
-    QSqlQuery query=m_db.exec(sql);
-    QSqlError error=m_db.lastError();
+    QString sql=QString("select '%1' '%2' from tuser where tel='%3'").arg(name,dbPassWord,tel);
+    QSqlQuery query(sql);
+    query.exec();
+
+    while(query.next())
+    {
+        name=query.value("name").toString();
+        dbPassWord=query.value("passwrod").toString();
+    }
 
     //response
+    QSqlError error = m_db.lastError();
     if(error.type()==QSqlError::NoError){//ok
         return 0;
     }

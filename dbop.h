@@ -6,6 +6,7 @@
 #include<QtSql/QSqlError>
 
 #include <hiredis/hiredis.h>
+#include "dbop.h"
 
 typedef struct DriverInfo{
     QString name;
@@ -31,6 +32,7 @@ class dbop
 {
 public:
     dbop();
+    ~dbop();
     static dbop* instance();
     int initRedis();
     int initdb();
@@ -46,6 +48,7 @@ private:
     QSqlDatabase m_db;
     redisContext* m_redisc;
     redisReply *m_reply;
+    static dbop* dp;
 };
 
 #endif // DBOP_H

@@ -9,9 +9,6 @@
 #include"order.h"
 #include"dbop.h"
 
-
-
-
 Server::Server(QObject *parent) : QObject(parent)
 {
 
@@ -50,7 +47,11 @@ QByteArray Server::handle(QByteArray& request)
     QJsonObject obj=doc.object();
 
     //提取命令
-    int cmd=obj.value(KK_CMD).toInt();
+    //int cmd=obj.value(KK_CMD).toInt();
+
+    QString cmdTmp=obj.value(KK_CMD).toString();
+    int cmd=q2i(cmdTmp);
+
     QJsonObject resp;
     resp.insert(KK_RESULT,QString(KK_ERR));
     resp.insert(KK_REASON,QString("unknown cmd"));//默认是未知命令，做错误返回
@@ -318,7 +319,8 @@ QJsonObject Server::Reg(QJsonObject &req)
 {
     QString username=req.value(KK_USERNAME).toString();
     QString password=req.value(KK_PASSWORD).toString();
-    QString tel=req.value(KK_TEL).toString();
+    QString tel="15975338888";
+    tel=req.value(KK_TEL).toString();
     LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Reg():%s",username.toStdString().c_str());
 
     //change to md5 128bit=16bytes
@@ -369,9 +371,9 @@ QJsonObject Server::Reg(QJsonObject &req)
 
 QJsonObject Server::Login(QJsonObject &req)
 {
-    QString username=req.value(KK_USERNAME).toString();
+    QString tel=req.value(KK_USERNAME).toString();
     QString password=req.value(KK_PASSWORD).toString();
-    if(!username.compare("") || !password.compare("")){
+    if(!tel.compare("") || !password.compare("")){
         QJsonObject resp;
         resp.insert(KK_RESULT,QString(KK_NOTEMPTY));
         return resp;
@@ -380,11 +382,11 @@ QJsonObject Server::Login(QJsonObject &req)
     double lng=req.value(KK_LNG).toDouble();
     QString type=req.value(KK_TYPE).toString();
 
-        LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Login():%s",username.toStdString().c_str());
+        LOG(__FILE__, __LINE__,LogLevel[4], 4,"func Login():%s",tel.toStdString().c_str());
 
         //read from db
         //手机号码		约车用
-        QString tel="13512312312";//
+      //  QString tel="13512312312";//
         QString name="abc";
         QString dbPassword="";
         QString err="";
@@ -470,12 +472,12 @@ void Server::slotRequestReady(HttpServerRequest &request, HttpServerResponse &re
         QByteArray buf=request.readBody();
         QByteArray resp=handle(buf);
 
-#if 0
+#if 1
         qDebug()<<buf;
         //响应客户端
 #endif
         LOG(__FILE__, __LINE__,LogLevel[4], 4,"func slotRequestReady()");
         response.writeHead(HttpResponseStatus::OK);  //200 ok
-        response.end("i have receive your request.");  //content
+        response.end(resp);  //content
     });
 }
